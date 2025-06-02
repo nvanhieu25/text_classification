@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text Classification App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .result-label { font-weight: bold; }
+        .confidence-bar { height: 20px; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body class="container py-4">
+    <h1 class="mb-4">Text Classification App</h1>
+    <form method="post" enctype="multipart/form-data" class="mb-4">
+        <div class="mb-3">
+            <label for="model" class="form-label">Select Model:</label>
+            <select class="form-select" id="model" name="model">
+                {% for key, opt in model_options.items() %}
+                    <option value="{{ key }}" {% if selected_model == key %}selected{% endif %}>{{ opt.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="text" class="form-label">Enter text for classification:</label>
+            <textarea class="form-control" id="text" name="text" rows="3" placeholder="Type your text here..."></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="file" class="form-label">Or upload a CSV file (with a 'text' column):</label>
+            <input class="form-control" type="file" id="file" name="file" accept=".csv">
+        </div>
+        <button type="submit" class="btn btn-primary">Classify</button>
+        <button type="reset" class="btn btn-secondary">Clear</button>
+    </form>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    {% if result %}
+        <div class="alert alert-success">
+            <div><strong>Model:</strong> {{ model_options[selected_model].name }}</div>
+            <div class="result-label">Prediction: <span class="badge bg-info text-dark">{{ result.label }}</span></div>
+            <div>Confidence: <span class="badge bg-success">{{ result.confidence }}</span></div>
+        </div>
+    {% endif %}
+
+    {% if batch_results %}
+        <h3>Batch Results ({{ model_options[selected_model].name }})</h3>
+        <button id="downloadBtn" class="btn btn-success mb-3">Download Results as CSV</button>
+        <canvas id="resultsChart" width="400" height="200" class="mb-4"></canvas>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Text</th>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in batch_results %}
+                <tr>
+                    <td>{{ row.text }}</td>
+                    <td><span class="badge bg-info text-dark">{{ row.label }}</span></td>
+                    <td><span class="badge bg-success">{{ row.confidence }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+<script>
+// Assign batchResults from Jinja to a JS variable at the top
+const batchResults = {{ batch_results|tojson|default('[]') }};
+const chartCanvas = document.getElementById('resultsChart');
+if (chartCanvas) {
+    // Prepare data for Chart.js
+    const labelCounts = {};
+    batchResults.forEach(r => {
+        labelCounts[r.label] = (labelCounts[r.label] || 0) + 1;
+    });
+    const labels = Object.keys(labelCounts);
+    const data = Object.values(labelCounts);
+    const ctx = chartCanvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Count',
+                data: data,
+                backgroundColor: 'rgba(23, 162, 184, 0.7)',
+                borderColor: 'rgba(23, 162, 184, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Prediction Counts' }
+            },
+            scales: {
+                y: { beginAtZero: true, precision: 0 }
+            }
+        }
+    });
+}
+
+// Download CSV functionality
+const downloadBtn = document.getElementById('downloadBtn');
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', function() {
+        if (!batchResults.length) return;
+        const headers = Object.keys(batchResults[0]);
+        const csvRows = [headers.join(',')];
+        batchResults.forEach(row => {
+            csvRows.push(headers.map(h => '"' + String(row[h]).replace(/"/g, '""') + '"').join(','));
+        });
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'batch_results.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+}
+</script>
+</body>
+</html> 

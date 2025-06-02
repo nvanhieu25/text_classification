@@ -1,0 +1,58 @@
+body {
+    background-color: #f8f9fa;
+}
+
+h1 {
+    color: #2c3e50;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+form {
+    background: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.result-label {
+    font-size: 1.2em;
+    color: #34495e;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.alert-success {
+    border-left: 6px solid #28a745;
+}
+
+.alert-danger {
+    border-left: 6px solid #dc3545;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #f2f6fc;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+button.btn-primary {
+    background: linear-gradient(90deg, #17a2b8 0%, #28a745 100%);
+    border: none;
+}
+
+button.btn-primary:hover {
+    background: linear-gradient(90deg, #28a745 0%, #17a2b8 100%);
+} 
